@@ -1,4 +1,4 @@
-import { FunctionComponent, MouseEvent, RefObject, useEffect, useRef, useState } from 'react';
+import { FunctionComponent, MouseEvent, MutableRefObject, RefObject, useEffect, useRef, useState } from 'react';
 import styled from 'styled-components';
 import Vertex, { VertexInfo } from './vertex';
 import Edge, { EdgeInfo } from './edge';
@@ -21,7 +21,7 @@ type Props = {
 	graph: GraphInfo;
 	setGraph: (graph: GraphInfo) => void;
 	containerRef: RefObject<HTMLDivElement>;
-	vertexRefs: RefObject<HTMLDivElement[]>;
+	vertexRefs: MutableRefObject<{ [key: number]: HTMLDivElement }>;
 };
 
 const Graph: FunctionComponent<Props> = ({ graph, setGraph, containerRef, vertexRefs }) => {
@@ -48,6 +48,16 @@ const Graph: FunctionComponent<Props> = ({ graph, setGraph, containerRef, vertex
 		setVertices([...vertices, { id, x, y, text: `Vertex #${id}` }]);
 		event.stopPropagation();
 	};
+	const deleteVertex = (id: number) => {
+		const newVertices = vertices.filter(v => v.id !== id);
+		delete vertexRefs.current[id];
+		lastVertexIdRef.current = -1;
+
+		setGraph({
+			edges: edges.filter(e => e.from !== id && e.to !== id),
+			vertices: newVertices
+		});
+	};
 
 	const setEdges = (edges: EdgeInfo[]) => setGraph({ vertices: graph.vertices, edges });
 	const createEdge = (from: number, to: number) => {
@@ -59,6 +69,8 @@ const Graph: FunctionComponent<Props> = ({ graph, setGraph, containerRef, vertex
 
 	useEffect(() => {
 		setUpdateEdge(!updateEdge);
+		vertexId.current = graph.vertices.reduce((max, cur) => Math.max(max, cur.id + 1), 0);
+		edgeId.current = graph.edges.reduce((max, cur) => Math.max(max, cur.id + 1), 0);
 	}, [graph]);
 
 	return (
@@ -69,12 +81,13 @@ const Graph: FunctionComponent<Props> = ({ graph, setGraph, containerRef, vertex
 					{...vertexInfo}
 					setText={(text: string) => updateVertex(vertexInfo.id, { text })}
 					createEdge={createEdge}
-					containerRef={(element: HTMLDivElement) => (vertexRefs.current![vertexInfo.id] = element)}
+					deleteVertex={() => deleteVertex(vertexInfo.id)}
+					containerRef={(element: HTMLDivElement) => (vertexRefs.current[vertexInfo.id] = element)}
 					lastVertexIdRef={lastVertexIdRef}
 				/>
 			))}
 			{edges.map(({ id, from, to }) => (
-				<Edge key={id} from={vertexRefs.current![from]} to={vertexRefs.current![to]} />
+				<Edge key={id} from={vertexRefs.current[from]} to={vertexRefs.current[to]} />
 			))}
 		</Container>
 	);

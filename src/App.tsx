@@ -26,8 +26,15 @@ const Container = styled.div`
 	height: 100vh;
 `;
 
+const Buttons = styled.div`
+	display: flex;
+	flex-direction: row;
+	align-items: center;
+`;
+
 const Button = styled.button`
 	padding: 4px 10px;
+	margin: 0 10px;
 	border: 1px solid #b8b8b8;
 	border-radius: 5px;
 	font-size: 14px;
@@ -35,10 +42,23 @@ const Button = styled.button`
 	outline: none;
 `;
 
+const emptyGraph: GraphInfo = { vertices: [], edges: [] };
+
 const App: FunctionComponent = () => {
-	const [graph, setGraph] = useState<GraphInfo>({ vertices: [], edges: [] });
+	const [graph, setGraph] = useState<GraphInfo>(emptyGraph);
 	const graphContainerRef = useRef<HTMLDivElement>(null);
-	const vertexRefs = useRef<HTMLDivElement[]>([]);
+	const vertexRefs = useRef<{ [key: number]: HTMLDivElement }>({});
+
+	const save = () => localStorage.setItem('graph', JSON.stringify(graph));
+
+	const load = () => {
+		const rawGraph = localStorage.getItem('graph');
+		if (!rawGraph) return;
+		reset();
+		setTimeout(() => setGraph(JSON.parse(rawGraph)));
+	};
+
+	const reset = () => setGraph(emptyGraph);
 
 	const sort = () => {
 		if (!graphContainerRef.current) return;
@@ -48,6 +68,10 @@ const App: FunctionComponent = () => {
 		graph.edges.forEach(({ from, to }) => adjacencyList[from].push(to));
 
 		const sortedGraph = topologicalSort(adjacencyList);
+		if (sortedGraph === null) {
+			alert('Graph contains a cycle!');
+			return;
+		}
 
 		const { offsetWidth: width, offsetHeight: height } = graphContainerRef.current;
 
@@ -56,6 +80,8 @@ const App: FunctionComponent = () => {
 		const vertexHorizontalMargin = (width - totalVertexWidth) / (sortedGraph.length + 1);
 
 		const newVertices = [...graph.vertices];
+		const idToIndex: { [key: number]: number } = {};
+		newVertices.forEach((v, i) => (idToIndex[v.id] = i));
 
 		let xOffset = vertexHorizontalMargin;
 		sortedGraph.forEach((layer, i) => {
@@ -67,8 +93,9 @@ const App: FunctionComponent = () => {
 				const width = vertexRefs.current[id].offsetWidth;
 				const height = vertexRefs.current[id].offsetHeight;
 
-				newVertices[id].x = xOffset + width / 2;
-				newVertices[id].y = yOffset + height / 2;
+				const idx = idToIndex[id];
+				newVertices[idx].x = xOffset + width / 2;
+				newVertices[idx].y = yOffset + height / 2;
 
 				yOffset += height + vertexVerticalMargin;
 			});
@@ -83,7 +110,12 @@ const App: FunctionComponent = () => {
 		<Container>
 			<GlobalStyles />
 			<h1>Graph</h1>
-			<Button onClick={sort}>Sort</Button>
+			<Buttons>
+				<Button onClick={save}>Save</Button>
+				<Button onClick={load}>Load</Button>
+				<Button onClick={reset}>Reset</Button>
+				<Button onClick={sort}>Sort</Button>
+			</Buttons>
 			<Graph graph={graph} setGraph={setGraph} containerRef={graphContainerRef} vertexRefs={vertexRefs} />
 		</Container>
 	);

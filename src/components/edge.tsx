@@ -1,4 +1,4 @@
-import { FunctionComponent, useEffect } from 'react';
+import { FunctionComponent } from 'react';
 import styled from 'styled-components';
 
 type Coords = {
@@ -40,11 +40,13 @@ export type EdgeInfo = {
 };
 
 type Props = {
-	from: HTMLDivElement;
-	to: HTMLDivElement;
+	from?: HTMLDivElement;
+	to?: HTMLDivElement;
 };
 
 const Edge: FunctionComponent<Props> = ({ from, to }) => {
+	if (!from || !to) return null;
+
 	let { offsetLeft: x1, offsetTop: y1, offsetWidth: w1 } = from;
 	let { offsetLeft: x2, offsetTop: y2, offsetWidth: w2 } = to;
 

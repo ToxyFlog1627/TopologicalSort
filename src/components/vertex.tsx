@@ -1,4 +1,4 @@
-import { MouseEvent, FunctionComponent, MutableRefObject } from 'react';
+import { MouseEvent, FunctionComponent, MutableRefObject, SyntheticEvent } from 'react';
 import styled from 'styled-components';
 
 const Container = styled.div<{ x: number; y: number }>`
@@ -38,11 +38,12 @@ export type VertexInfo = {
 type Props = VertexInfo & {
 	setText: (text: string) => void;
 	createEdge: (from: number, to: number) => void;
+	deleteVertex: () => void;
 	containerRef: (element: HTMLDivElement) => void;
 	lastVertexIdRef: MutableRefObject<number>;
 };
 
-const Vertex: FunctionComponent<Props> = ({ id, x, y, text, setText, createEdge, containerRef, lastVertexIdRef }) => {
+const Vertex: FunctionComponent<Props> = ({ id, x, y, text, setText, createEdge, deleteVertex, containerRef, lastVertexIdRef }) => {
 	const onMouseDown = (event: MouseEvent) => {
 		lastVertexIdRef.current = id;
 		event.stopPropagation();
@@ -55,8 +56,16 @@ const Vertex: FunctionComponent<Props> = ({ id, x, y, text, setText, createEdge,
 		event.stopPropagation();
 	};
 
+	const preventDefault = (callback: Function) => {
+		return (event: SyntheticEvent, ...args: any[]) => {
+			callback(event, ...args);
+			event.preventDefault();
+			event.stopPropagation();
+		};
+	};
+
 	return (
-		<Container x={x} y={y} onMouseDown={onMouseDown} onMouseUp={onMouseUp} ref={containerRef}>
+		<Container x={x} y={y} onMouseDown={onMouseDown} onMouseUp={onMouseUp} ref={containerRef} onContextMenu={preventDefault(deleteVertex)}>
 			<InlineInput value={text} onChange={event => setText((event.target as HTMLInputElement).value)} />
 		</Container>
 	);

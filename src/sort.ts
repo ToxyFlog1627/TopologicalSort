@@ -1,6 +1,6 @@
 export type AdjacencyList = { [key: number]: number[] };
 
-const topologicalSort = (adjacencyList: AdjacencyList): number[][] => {
+const topologicalSort = (adjacencyList: AdjacencyList): number[][] | null => {
 	const ids: number[] = Object.keys(adjacencyList).map(Number);
 	const indegree: { [key: number]: number } = {};
 
@@ -22,7 +22,7 @@ const topologicalSort = (adjacencyList: AdjacencyList): number[][] => {
 		result.push(currentLayer);
 	}
 
-	if (count !== Object.keys(adjacencyList).length) throw new Error('Graph contains a cycle!');
+	if (count !== Object.keys(adjacencyList).length) return null;
 	return result;
 };
 
